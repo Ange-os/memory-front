@@ -33,14 +33,14 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg text-fg py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-bg text-fg py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="flex justify-end">
           <ThemeToggle />
         </div>
         <div className="flex flex-col items-center gap-3">
           <Logo compact />
-          <h2 className="text-center text-3xl font-extrabold tracking-tight">
+          <h2 className="text-center text-2xl sm:text-3xl font-extrabold tracking-tight px-1">
             memory-bot
           </h2>
           <p className="text-center text-sm opacity-70">
@@ -59,7 +59,7 @@ export default function LoginForm() {
                 type="text"
                 autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border bg-surface placeholder:opacity-60 text-fg rounded-t-md focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:z-10"
+                className="appearance-none rounded-none relative block w-full min-h-[48px] px-3 py-2.5 border border-border bg-surface placeholder:opacity-60 text-fg text-base rounded-t-md focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Nombre de usuario"
                 value={nombreUsuario}
                 onChange={(e) => setNombreUsuario(e.target.value)}
@@ -75,7 +75,7 @@ export default function LoginForm() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border bg-surface placeholder:opacity-60 text-fg rounded-b-md focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:z-10"
+                className="appearance-none rounded-none relative block w-full min-h-[48px] px-3 py-2.5 border border-border bg-surface placeholder:opacity-60 text-fg text-base rounded-b-md focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -84,8 +84,8 @@ export default function LoginForm() {
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="rounded-md border border-red-500/30 bg-red-500/10 p-4">
+              <p className="text-sm text-red-900 dark:text-red-100">{error}</p>
             </div>
           )}
 
@@ -93,7 +93,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+              className="group relative w-full flex justify-center min-h-[48px] py-3 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 touch-manipulation"
             >
               {loading ? 'Iniciando...' : 'Iniciar Sesión'}
             </button>

@@ -2,13 +2,11 @@
 
 export default function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
       <svg
-        width="40"
-        height="40"
         viewBox="0 0 64 64"
         aria-hidden="true"
-        className="shrink-0"
+        className="h-9 w-9 sm:h-10 sm:w-10 shrink-0"
       >
         <defs>
           <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -43,7 +41,9 @@ export default function Logo({ compact = false }: { compact?: boolean }) {
       </svg>
       {!compact && (
         <div className="leading-tight">
-          <div className="text-lg font-semibold tracking-tight text-fg">memory-bot</div>
+          <div className="text-base sm:text-lg font-semibold tracking-tight text-fg truncate">
+            memory-bot
+          </div>
         </div>
       )}
     </div>

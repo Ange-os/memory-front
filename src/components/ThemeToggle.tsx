@@ -41,7 +41,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="inline-flex items-center justify-center p-2 rounded-md border border-border bg-surface text-fg hover:opacity-90 transition shrink-0"
+      className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-2 rounded-md border border-border bg-surface text-fg hover:opacity-90 transition shrink-0 touch-manipulation"
       title={mode === 'dark' ? 'Modo claro' : 'Modo oscuro'}
       aria-label={mode === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
     >

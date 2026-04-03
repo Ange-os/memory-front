@@ -72,14 +72,14 @@ export default function DocumentUpload({ token, onUploadComplete }: Props) {
   };
 
   return (
-    <div className="bg-surface rounded-lg border border-border p-6">
+    <div className="bg-surface rounded-lg border border-border p-4 sm:p-6">
       <h3 className="text-lg font-semibold text-fg mb-4">Cargar Nuevo Documento</h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Dropzone */}
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          className={`border-2 border-dashed rounded-lg p-5 sm:p-8 text-center cursor-pointer transition-colors min-h-[140px] flex flex-col items-center justify-center touch-manipulation ${
             isDragActive
               ? 'border-primary bg-bg'
               : 'border-border hover:border-primary'
@@ -108,7 +108,7 @@ export default function DocumentUpload({ token, onUploadComplete }: Props) {
               setTipo(e.target.value);
               setSubcategoria('');
             }}
-            className="mt-1 block w-full rounded-md border-border bg-bg shadow-sm focus:border-primary focus:ring-primary/30 sm:text-sm"
+            className="mt-1 block w-full min-h-[44px] rounded-md border border-border bg-bg px-3 shadow-sm focus:border-primary focus:ring-primary/30 text-base sm:text-sm"
           >
             <option value="tramite">Trámite</option>
             <option value="informacion">Información</option>
@@ -128,7 +128,7 @@ export default function DocumentUpload({ token, onUploadComplete }: Props) {
                 setCustomSubcategoria('');
               }
             }}
-            className="mt-1 block w-full rounded-md border-border bg-bg shadow-sm focus:border-primary focus:ring-primary/30 sm:text-sm"
+            className="mt-1 block w-full min-h-[44px] rounded-md border border-border bg-bg px-3 shadow-sm focus:border-primary focus:ring-primary/30 text-base sm:text-sm"
           >
             <option value="">Seleccionar...</option>
             {(tipo === 'tramite' ? subcategoriasTramite : subcategoriasInformacion).map((sub) => (
@@ -151,7 +151,7 @@ export default function DocumentUpload({ token, onUploadComplete }: Props) {
               value={customSubcategoria}
               onChange={(e) => setCustomSubcategoria(e.target.value)}
               placeholder="Escribí la subcategoría..."
-              className="mt-1 block w-full rounded-md border-border bg-bg shadow-sm focus:border-primary focus:ring-primary/30 sm:text-sm"
+              className="mt-1 block w-full min-h-[44px] rounded-md border border-border bg-bg px-3 shadow-sm focus:border-primary focus:ring-primary/30 text-base sm:text-sm"
               required
             />
           </div>
@@ -160,10 +160,10 @@ export default function DocumentUpload({ token, onUploadComplete }: Props) {
         {/* Mensaje */}
         {message && (
           <div
-            className={`rounded-md p-4 flex items-center gap-2 ${
+            className={`rounded-md border p-4 flex items-start sm:items-center gap-2 ${
               message.type === 'success'
-                ? 'bg-green-50 text-green-800'
-                : 'bg-red-50 text-red-800'
+                ? 'border-green-500/30 bg-green-500/10 text-green-900 dark:text-green-100'
+                : 'border-red-500/30 bg-red-500/10 text-red-900 dark:text-red-100'
             }`}
           >
             {message.type === 'success' ? (
@@ -179,7 +179,7 @@ export default function DocumentUpload({ token, onUploadComplete }: Props) {
         <button
           type="submit"
           disabled={!file || (!subcategoria && !customSubcategoria.trim()) || loading}
-          className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center items-center gap-2 min-h-[48px] py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {loading ? 'Procesando...' : 'Cargar Documento'}
