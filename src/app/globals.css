@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Paleta por variables (light/dark) */
+:root {
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --primary: #6200ee;
+  --accent: #03dac6;
+  --fg: #1c1b1f;
+  --border: rgba(28, 27, 31, 0.12);
+}
+
+html.dark {
+  --bg: #121212;
+  --surface: #1e1e1e;
+  --primary: #863cef;
+  --accent: #29e7d5;
+  --fg: #e2e2e2;
+  --border: rgba(226, 226, 226, 0.16);
+}
+
+html {
+  font-size: 17px;
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+body {
+  color: var(--fg);
+  background: var(--bg);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

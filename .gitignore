@@ -1,0 +1,11 @@
+# Node
+node_modules/
+.next/
+out/
+
+# Environment
+.env.example
+.env
+.env.local
+.env.*.local
+Dockerfile
