@@ -1,8 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getColeccion, actualizarPunto, eliminarPunto } from '@/lib/api';
-import { FileText, Edit2, Trash2, X, Save, Loader2, RefreshCw } from 'lucide-react';
+import {
+  getColeccion,
+  actualizarPunto,
+  eliminarPunto,
+  buscarPuntosPayload,
+  actualizarBloqueQdrant,
+} from '@/lib/api';
+import { FileText, Edit2, Trash2, X, Save, Loader2, RefreshCw, Search } from 'lucide-react';
 
 interface Props {
   token: string;
@@ -21,6 +27,39 @@ interface Punto {
   };
 }
 
+const SEARCH_FIELDS = [
+  { value: 'all', label: 'Todos los campos' },
+  { value: 'title', label: 'Titulo' },
+  { value: 'topic', label: 'Tema' },
+  { value: 'subtopic', label: 'Subtema' },
+  { value: 'type', label: 'Tipo' },
+  { value: 'content', label: 'Contenido' },
+];
+
+function getMetadata(payload: Punto['payload']): Record<string, any> {
+  return payload?.metadata && typeof payload.metadata === 'object' ? payload.metadata : {};
+}
+
+function getTitle(payload: Punto['payload']): string {
+  const metadata = getMetadata(payload);
+  return String(payload?.title || metadata.title || '');
+}
+
+function getTopic(payload: Punto['payload']): string {
+  const metadata = getMetadata(payload);
+  return String(payload?.topic || metadata.topic || '');
+}
+
+function getBlockId(payload: Punto['payload']): number | null {
+  const metadata = getMetadata(payload);
+  const value = metadata.block_id ?? payload?.block_id;
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const asNumber = Number(value);
+  return Number.isFinite(asNumber) ? asNumber : null;
+}
+
 function getTexto(payload: Punto['payload']): string {
   return (
     payload?.texto ||
@@ -31,18 +70,22 @@ function getTexto(payload: Punto['payload']): string {
 }
 
 function getTipo(payload: Punto['payload']): string {
-  return payload?.tipo || (payload?.metadata ? (payload.metadata['tipo'] as string) : '') || '';
+  const metadata = getMetadata(payload);
+  return String(payload?.tipo || payload?.type || metadata?.tipo || metadata?.type || '');
 }
 
 function getSubcategoria(payload: Punto['payload']): string {
+  const metadata = getMetadata(payload);
   return (
-    payload?.subcategoria ||
-    (payload?.metadata
-      ? ((payload.metadata['subcategoria'] ||
-          payload.metadata['información'] ||
-          payload.metadata['informacion']) as string)
-      : '') ||
-    ''
+    String(
+      payload?.subcategoria ||
+        payload?.subtopic ||
+        metadata?.subcategoria ||
+        metadata?.subtopic ||
+        metadata?.['información'] ||
+        metadata?.['informacion'] ||
+        ''
+    )
   );
 }
 
@@ -57,6 +100,8 @@ export default function PuntosQdrant({ token }: Props) {
   const [editData, setEditData] = useState({ texto: '', tipo: '', subcategoria: '' });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('all');
 
   const cargarPuntos = async () => {
     setLoading(true);
@@ -66,6 +111,28 @@ export default function PuntosQdrant({ token }: Props) {
       setPuntos(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar puntos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarPuntos = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await buscarPuntosPayload(token, {
+        q: searchQuery,
+        field: searchField === 'all' ? '' : searchField,
+        limit: 200,
+      });
+      setPuntos(
+        (data.resultados || []).map((item) => ({
+          id: item.point_id,
+          payload: item.payload || {},
+        }))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al buscar puntos');
     } finally {
       setLoading(false);
     }
@@ -92,15 +159,31 @@ export default function PuntosQdrant({ token }: Props) {
   const guardarEdicion = async (puntoId: string) => {
     setSaving(true);
     try {
-      await actualizarPunto(
-        puntoId,
-        {
-          texto: editData.texto,
-          tipo: editData.tipo,
-          subcategoria: editData.subcategoria,
-        },
-        token
-      );
+      const punto = puntos.find((p) => p.id === puntoId);
+      const blockId = punto ? getBlockId(punto.payload) : null;
+      if (blockId !== null) {
+        await actualizarBloqueQdrant(
+          blockId,
+          {
+            content: editData.texto,
+            metadata: {
+              type: editData.tipo,
+              subtopic: editData.subcategoria,
+            },
+          },
+          token
+        );
+      } else {
+        await actualizarPunto(
+          puntoId,
+          {
+            texto: editData.texto,
+            tipo: editData.tipo,
+            subcategoria: editData.subcategoria,
+          },
+          token
+        );
+      }
       setEditingId(null);
       cargarPuntos();
     } catch (err) {
@@ -136,6 +219,41 @@ export default function PuntosQdrant({ token }: Props) {
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Actualizar
+        </button>
+      </div>
+
+      <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_180px_auto]">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              buscarPuntos();
+            }
+          }}
+          placeholder="Buscar por titulo, tema, subtema o contenido..."
+          className={inputClass}
+        />
+        <select
+          value={searchField}
+          onChange={(e) => setSearchField(e.target.value)}
+          className={inputClass}
+        >
+          {SEARCH_FIELDS.map((field) => (
+            <option key={field.value} value={field.value}>
+              {field.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={buscarPuntos}
+          disabled={loading}
+          className="inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 text-sm font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 touch-manipulation"
+        >
+          <Search className="h-4 w-4" />
+          Buscar
         </button>
       </div>
 
@@ -218,6 +336,16 @@ export default function PuntosQdrant({ token }: Props) {
                       <FileText className="h-5 w-5 text-fg opacity-50 mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap gap-2 mb-2">
+                          {getTitle(punto.payload) && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/15 text-fg">
+                              {getTitle(punto.payload)}
+                            </span>
+                          )}
+                          {getTopic(punto.payload) && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface border border-border text-fg">
+                              {getTopic(punto.payload)}
+                            </span>
+                          )}
                           {getTipo(punto.payload) && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/15 text-primary">
                               {getTipo(punto.payload)}
@@ -238,6 +366,11 @@ export default function PuntosQdrant({ token }: Props) {
                           {getTexto(punto.payload) || 'Sin texto'}
                         </p>
                         <p className="text-xs text-fg opacity-50 mt-2 break-all">ID: {punto.id}</p>
+                        {getBlockId(punto.payload) !== null && (
+                          <p className="text-xs text-fg opacity-50 mt-1 break-all">
+                            block_id: {getBlockId(punto.payload)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-1 sm:ml-2 justify-end shrink-0">

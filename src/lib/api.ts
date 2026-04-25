@@ -117,6 +117,28 @@ export async function getColeccion(token: string): Promise<any[]> {
   return response.json();
 }
 
+export async function buscarPuntosPayload(
+  token: string,
+  data: { q?: string; field?: string; limit?: number }
+): Promise<{ resultados: any[]; total: number }> {
+  requireToken(token);
+  const response = await fetch(`${API_URL}/search/puntos/buscar`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Error al buscar puntos' }));
+    throw new Error(error.detail || 'Error al buscar puntos');
+  }
+
+  return response.json();
+}
+
 export async function actualizarPunto(
   pointId: string,
   data: { texto?: string; tipo?: string; subcategoria?: string; metadata?: Record<string, any> },
@@ -155,6 +177,29 @@ export async function eliminarPunto(
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Error al eliminar punto' }));
     throw new Error(error.detail || 'Error al eliminar punto');
+  }
+
+  return response.json();
+}
+
+export async function actualizarBloqueQdrant(
+  blockId: number,
+  data: { content?: string; metadata?: Record<string, any> },
+  token: string
+): Promise<{ success: boolean; message: string; block_id: number; point_id: string }> {
+  requireToken(token);
+  const response = await fetch(`${API_URL}/search/bloques/${blockId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Error al actualizar bloque' }));
+    throw new Error(error.detail || 'Error al actualizar bloque');
   }
 
   return response.json();

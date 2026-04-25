@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import LoginForm from '@/components/LoginForm';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -325,6 +326,13 @@ function Dashboard() {
               <Download className="h-4 w-4 shrink-0" aria-hidden />
               <span className="hidden sm:inline">Exportar JSON</span>
             </button>
+            <Link
+              href="/qdrant"
+              className="inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 border border-border rounded-md text-sm font-medium bg-bg text-fg hover:bg-surface transition touch-manipulation"
+            >
+              <span className="hidden sm:inline">Editar directo</span>
+              <span className="sm:hidden">Editar</span>
+            </Link>
             <button
               onClick={logout}
               type="button"
