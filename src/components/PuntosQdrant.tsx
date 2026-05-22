@@ -8,7 +8,7 @@ import {
   buscarPuntosPayload,
   actualizarBloqueQdrant,
 } from '@/lib/api';
-import { FileText, Edit2, Trash2, X, Save, Loader2, RefreshCw, Search } from 'lucide-react';
+import { FileText, Edit2, Trash2, X, Save, Loader2, RefreshCw, Search, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   token: string;
@@ -89,6 +89,34 @@ function getSubcategoria(payload: Punto['payload']): string {
   );
 }
 
+/** Inyecta block_id del resultado de búsqueda en metadata para guardar por bloque. */
+function mapResultadoBusqueda(item: {
+  point_id?: string;
+  id?: string;
+  block_id?: number | string | null;
+  payload?: Punto['payload'];
+}): Punto {
+  const payload: Punto['payload'] = { ...(item.payload || {}) };
+  const blockId = item.block_id ?? getMetadata(payload).block_id ?? payload.block_id;
+  if (blockId !== undefined && blockId !== null && blockId !== '') {
+    payload.metadata = { ...getMetadata(payload), block_id: blockId };
+    if (payload.block_id == null) {
+      payload.block_id = blockId;
+    }
+  }
+  return {
+    id: String(item.point_id ?? item.id),
+    payload,
+  };
+}
+
+function mapResultadoColeccion(item: { id: string; payload?: Punto['payload'] }): Punto {
+  return {
+    id: String(item.id),
+    payload: item.payload || {},
+  };
+}
+
 const inputClass =
   'w-full min-h-[44px] rounded-md border border-border bg-bg px-3 text-fg shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/30 text-base sm:text-sm';
 
@@ -102,13 +130,24 @@ export default function PuntosQdrant({ token }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchField, setSearchField] = useState('all');
+  const [searchActive, setSearchActive] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const recargarLista = async () => {
+    if (searchActive) {
+      await buscarPuntos({ keepSearchFlag: true });
+    } else {
+      await cargarPuntos();
+    }
+  };
 
   const cargarPuntos = async () => {
     setLoading(true);
     setError('');
+    setSearchActive(false);
     try {
       const data = await getColeccion(token);
-      setPuntos(data);
+      setPuntos((data || []).map(mapResultadoColeccion));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar puntos');
     } finally {
@@ -116,21 +155,22 @@ export default function PuntosQdrant({ token }: Props) {
     }
   };
 
-  const buscarPuntos = async () => {
+  const buscarPuntos = async (opts?: { keepSearchFlag?: boolean }) => {
     setLoading(true);
     setError('');
+    if (!opts?.keepSearchFlag) {
+      setSearchActive(searchQuery.trim().length > 0);
+    }
     try {
       const data = await buscarPuntosPayload(token, {
         q: searchQuery,
         field: searchField === 'all' ? '' : searchField,
         limit: 200,
       });
-      setPuntos(
-        (data.resultados || []).map((item) => ({
-          id: item.point_id,
-          payload: item.payload || {},
-        }))
-      );
+      setPuntos((data.resultados || []).map(mapResultadoBusqueda));
+      if (!opts?.keepSearchFlag) {
+        setSearchActive(searchQuery.trim().length > 0);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al buscar puntos');
     } finally {
@@ -158,13 +198,20 @@ export default function PuntosQdrant({ token }: Props) {
 
   const guardarEdicion = async (puntoId: string) => {
     setSaving(true);
+    setError('');
+    setSuccessMessage('');
+    let putOk = false;
     try {
       const punto = puntos.find((p) => p.id === puntoId);
       const blockId = punto ? getBlockId(punto.payload) : null;
+
+      let savedPointId = puntoId;
+
       if (blockId !== null) {
-        await actualizarBloqueQdrant(
+        const res = await actualizarBloqueQdrant(
           blockId,
           {
+            point_id: puntoId,
             content: editData.texto,
             metadata: {
               type: editData.tipo,
@@ -173,6 +220,7 @@ export default function PuntosQdrant({ token }: Props) {
           },
           token
         );
+        savedPointId = String(res.point_id || puntoId);
       } else {
         await actualizarPunto(
           puntoId,
@@ -184,12 +232,25 @@ export default function PuntosQdrant({ token }: Props) {
           token
         );
       }
+
+      putOk = true;
       setEditingId(null);
-      cargarPuntos();
+      setSuccessMessage(
+        blockId !== null
+          ? `Guardado en punto ${savedPointId} (bloque ${blockId})`
+          : `Guardado en punto ${savedPointId}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar');
     } finally {
       setSaving(false);
+      if (putOk) {
+        try {
+          await recargarLista();
+        } catch (reloadErr) {
+          setError(reloadErr instanceof Error ? reloadErr.message : 'Error al recargar lista');
+        }
+      }
     }
   };
 
@@ -197,9 +258,11 @@ export default function PuntosQdrant({ token }: Props) {
     if (!confirm('¿Estás seguro de eliminar este punto?')) return;
 
     setDeletingId(puntoId);
+    setSuccessMessage('');
     try {
       await eliminarPunto(puntoId, token);
-      cargarPuntos();
+      setSuccessMessage(`Punto ${puntoId} eliminado`);
+      await recargarLista();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar');
     } finally {
@@ -248,7 +311,7 @@ export default function PuntosQdrant({ token }: Props) {
         </select>
         <button
           type="button"
-          onClick={buscarPuntos}
+          onClick={() => buscarPuntos()}
           disabled={loading}
           className="inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 text-sm font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 disabled:opacity-50 touch-manipulation"
         >
@@ -256,6 +319,13 @@ export default function PuntosQdrant({ token }: Props) {
           Buscar
         </button>
       </div>
+
+      {successMessage && (
+        <div className="rounded-md border border-green-500/30 bg-green-500/10 p-3 mb-4 flex items-start gap-2">
+          <CheckCircle2 className="h-4 w-4 text-green-700 dark:text-green-300 shrink-0 mt-0.5" />
+          <p className="text-sm text-green-800 dark:text-green-200">{successMessage}</p>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3 mb-4">

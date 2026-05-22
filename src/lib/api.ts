@@ -117,6 +117,25 @@ export async function getColeccion(token: string): Promise<any[]> {
   return response.json();
 }
 
+export async function getPunto(
+  pointId: string,
+  token: string
+): Promise<{ id: string; payload: Record<string, unknown> }> {
+  requireToken(token);
+  const response = await fetch(`${API_URL}/search/puntos/${pointId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Error al obtener punto' }));
+    throw new Error(error.detail || 'Error al obtener punto');
+  }
+
+  return response.json();
+}
+
 export async function buscarPuntosPayload(
   token: string,
   data: { q?: string; field?: string; limit?: number }
@@ -184,7 +203,7 @@ export async function eliminarPunto(
 
 export async function actualizarBloqueQdrant(
   blockId: number,
-  data: { content?: string; metadata?: Record<string, any> },
+  data: { content?: string; metadata?: Record<string, any>; point_id?: string },
   token: string
 ): Promise<{ success: boolean; message: string; block_id: number; point_id: string }> {
   requireToken(token);
